@@ -22,6 +22,7 @@
  * addontab         - add first visible element on tab or enter hit
  * attachto         - after this element fcbkcomplete insert own elements
  * bricket          - use square bricket with select (needed for asp or php) enabled by default
+ * item_fadeout_speed - fade out time [msec] of items
  */
 
 (function( $, undefined ) {
@@ -44,7 +45,8 @@
           element.after(holder);
         }
         complete = $('<div class="facebook-auto">').
-	  append('<div class="default">' + options.complete_text + "</div>");
+	  append('<div class="default" style="display:none">' + options.complete_text + "</div>");
+	  //append('<div class="default" >' + options.complete_text + "</div>");
         complete.hover(function() {complete_hover = 0;},
 		       function() {complete_hover = 1;});
         feed = $('<ul id="'+elemid+'_feed"></ul>');
@@ -187,7 +189,7 @@
             feed.show();
           } else {
             feed.hide();
-            complete.children(".default").show();
+            //complete.children(".default").show();
           }
         });
         
@@ -259,7 +261,7 @@
         if (focusme) {
           setTimeout( function() {
             input.focus();
-            complete.children(".default").show();
+            //complete.children(".default").show();
           }, 1);
         }
       }
