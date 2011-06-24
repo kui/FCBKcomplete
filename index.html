@@ -19,20 +19,23 @@
                 <option value="sport">sport</option>
                 <option value="freestyle">freestyle</option>
             </select>
-            <br/>
-            <br/>
             <input type="submit" value="Send">
         </form>
         <script type="text/javascript">
-            $(document).ready(function(){                
-                $("#select3").fcbkcomplete({
-                    json_url: "data.txt",
-                    addontab: true,                   
-                    maxitems: 2,
-                    height: 2,
-                    cache: true
-                });
+          $(document).ready(function(){                
+            $("#select3").fcbkcomplete({
+              json_url: "data.txt",
+	      filter_case: true,
+              addontab: true,
+              maxitems: 2,
+              height: 2,
+              cache: true,
+	      default_items: [{key:"ijkl",value:"ijkl"},
+			      {key:"efgh",value:"efgh"},
+			      {key:"abcd",value:"abcd"}],
+	      item_fadeout_speed: 1000
             });
+          });
         </script>
         
         <div id="testme"></div>

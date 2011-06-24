@@ -43,8 +43,10 @@
         } else {
           element.after(holder);
         }
-        complete = $('<div class="facebook-auto">').append('<div class="default">' + options.complete_text + "</div>");
-        complete.hover(function() {complete_hover = 0;}, function() {complete_hover = 1;});
+        complete = $('<div class="facebook-auto">').
+	  append('<div class="default">' + options.complete_text + "</div>");
+        complete.hover(function() {complete_hover = 0;},
+		       function() {complete_hover = 1;});
         feed = $('<ul id="'+elemid+'_feed"></ul>');
         holder.after(complete.prepend(feed));
         feed.css("width", complete.width());
@@ -59,14 +61,19 @@
           }
         }
 
-        var temp_elem = $('<'+element.get(0).tagName+' name="'+name+'" id="'+elemid+'" multiple="multiple" class="hidden">');
+        var temp_elem =
+	  $('<'+element.get(0).tagName+' name="'+name+'" id="'+
+	    elemid+'" multiple="multiple" class="hidden">');
         
         $.each(element.children('option'), function(i, option) {
           option = $(option);
           temp_elem.data(option.val(), option.text());
           if (option.hasClass("selected")) {
-            var id = addItem(option.text(), option.val(), true, option.hasClass("locked"));
-            temp_elem.append('<option value="'+option.val()+'" selected="selected" id="opt_'+id+'"class="selected">'+option.text()+'</option>');
+            var id = addItem(option.text(), option.val(), true, 
+			     option.hasClass("locked"));
+            temp_elem.append('<option value="'+option.val()+
+			     '" selected="selected" id="opt_'+id+
+			     '"class="selected">'+option.text()+'</option>');
           }
         });
         
@@ -103,7 +110,9 @@
         var id = randomId();
         var txt = document.createTextNode(xssDisplay(title));
         var aclose = $('<a class="closebutton" href="#"></a>');
-        var li = $('<li class="'+liclass+'" rel="'+value+'" id="pt_'+id+'"></li>').prepend(txt).append(aclose);
+        var li =
+	  $('<li class="'+liclass+'" rel="'+value+'" id="pt_'+id+'"></li>').
+	  prepend(txt).append(aclose);
 
         holder.append(li);
 
@@ -114,7 +123,10 @@
         if (!preadded) {
           $("#" + elemid + "_annoninput").remove();
           addInput(focusme);
-          var _item = $('<option value="'+xssDisplay(value, 1)+'" id="opt_'+id+'" class="selected" selected="selected">'+xssDisplay(title)+'</option>');
+          var _item =
+	    $('<option value="'+xssDisplay(value, 1)+'" id="opt_'+id+
+	      '" class="selected" selected="selected">'+xssDisplay(title)+
+	      '</option>');
           element.append(_item);
           if (options.onselect) {
             funCall(options.onselect, _item);
@@ -128,26 +140,29 @@
 
       function removeItem(item) {
         if (!item.hasClass('locked')) {
-          item.fadeOut("fast");
-          var id = item.attr('id');
-          if (options.onremove) {
-            var _item = id ?  $("#o" + id + "") : element.children("option[value=" + item.attr("rel") + "]");
-            funCall(options.onremove, _item);
-          }
-          if (id) {
-             $("#o" + id + "").remove();
-          } else {
-            element.children('option[value="' + item.attr("rel") + '"]').remove();
-          }
-          item.remove();
-          element.change();
-          deleting = 0;
+	  console.log(item);
+	  var _item = item;
+          _item.fadeOut(options.item_fadeout_speed, function(){
+            var id = _item.attr('id');
+	    var removeTarget =
+	      id ?
+	      $("#o" + id + "") : 
+	      element.children("option[value=" + _item.attr("rel") + "]");
+            if (options.onremove) {
+              funCall(options.onremove, removeTarget);
+            }
+	    removeTarget.remove();
+            _item.remove();
+            element.change();
+            deleting = 0;
+	  });
         }
       }
 
       function addInput(focusme) {
         var li = $('<li class="bit-input" id="'+elemid + '_annoninput">');
-        var input = $('<input type="text" class="maininput" size="1" autocomplete="off">');
+        var input = $('<input type="text" class="maininput" size="1"'+
+		      ' autocomplete="off">');
         var getBoxTimeout = 0;
 
         holder.append(li.append(input));
@@ -181,6 +196,7 @@
             return false;
           }
           //auto expand input
+	  // TODO support multibyte chars
           input.attr("size", input.val().length + 1);
         });
 
@@ -189,6 +205,9 @@
           
           if (event.keyCode == _key.backspace && etext.length == 0) {
             feed.hide();
+	    //replaceDefaultItems();
+
+	    // deleting the last option element
             if (!holder.children("li.bit-box:last").hasClass('locked')) {
               if (holder.children("li.bit-box.deleted").length == 0) {
                 holder.children("li.bit-box:last").addClass("deleted");
@@ -198,15 +217,18 @@
                   return;
                 }
                 deleting = 1;
-                holder.children("li.bit-box.deleted").fadeOut("fast", function() {
-                  removeItem($(this));
-                  return false;
-                });
+		holder.children("li.bit-box.deleted").each(function(){
+		  removeItem($(this));
+		});
               }
             }
           }
 
-          if (event.keyCode != _key.downarrow && event.keyCode != _key.uparrow && event.keyCode!= _key.leftarrow && event.keyCode!= _key.rightarrow && etext.length != 0) {
+          if (event.keyCode != _key.downarrow &&
+	      event.keyCode != _key.uparrow &&
+	      event.keyCode != _key.leftarrow &&
+	      event.keyCode != _key.rightarrow &&
+	      etext.length != 0) {
             counter = 0;
             if (options.json_url && maxItems()) {
               if (options.cache && json_cache_object.get(etext)) {
@@ -217,11 +239,13 @@
                 var getBoxTimeoutValue = getBoxTimeout;
                 setTimeout( function() {
                   if (getBoxTimeoutValue != getBoxTimeout) return;
-                  $.getJSON(options.json_url, {"tag": xssDisplay(etext)}, function(data) {
-                    addMembers(etext, data);
-                    json_cache_object.set(etext, 1);
-                    bindEvents();
-                  });
+                  $.getJSON(options.json_url,
+			    {"tag": xssDisplay(etext)},
+			    function(data) {
+			      addMembers(etext, data);
+			      json_cache_object.set(etext, 1);
+			      bindEvents();
+			    });
                 }, options.delay);
               }
             } else {
@@ -251,13 +275,17 @@
             cache.set(xssPrevent(val.key), xssPrevent(val.value));
           });
         }        
-        var maximum = options.maxshownitems < cache.length() ? options.maxshownitems: cache.length();
+        var maximum =
+	  options.maxshownitems < cache.length() ?
+	  options.maxshownitems : cache.length();
         var content = '';
         $.each(cache.search(etext), function (i, object) {
-          if (options.filter_selected && element.children("option[value=" + object.key + "]").hasClass("selected")) {
+          if (options.filter_selected &&
+	      element.children("option[value=" + object.key + "]").hasClass("selected")) {
             //nothing here...
           } else {
-            content += '<li rel="' + object.key + '">' + xssDisplay(itemIllumination(object.value, etext)) + '</li>';
+            content += '<li rel="' + object.key + '">' +
+	      xssDisplay(itemIllumination(object.value, etext)) + '</li>';
             counter++;
             maximum--;
           }
@@ -283,17 +311,12 @@
       }
 
       function itemIllumination(text, etext) {
-        if (options.filter_case) {
-          try {
-            var regex = new RegExp("(.*)(" + etext + ")(.*)", ((options.filter_case) ?"g":"gi"));
-            var text = text.replace(regex,'$1<em>$2</em>$3');
-          } catch(ex) {};
-        } else {
-          try {
-            var regex = new RegExp("(.*)(" + etext.toLowerCase() + ")(.*)", "gi");
-            var text = text.replace(regex,'$1<em>$2</em>$3');
-          } catch(ex) {};
-        }
+        try {
+          var regex = 
+	    new RegExp("(.*)(" + etext + ")(.*)",
+		       ((options.filter_case) ?"g":"gi"));
+          var text = text.replace(regex,'$1<em>$2</em>$3');
+        } catch(ex) {};
         return text;
       }
 
@@ -310,14 +333,16 @@
       }
 
       function removeFeedEvent() {
-        feed.unbind("mouseover").unbind("mouseout").mousemove( function() {
-          bindFeedEvent();
-          feed.unbind("mousemove");
+        feed.unbind("mouseover").unbind("mouseout").
+	  mousemove( function() {
+            bindFeedEvent();
+            feed.unbind("mousemove");
         });
       }
 
       function bindEvents() {
-        var maininput = $("#" + elemid + "_annoninput").children(".maininput");
+        var maininput = $("#" + elemid + "_annoninput").
+	  children(".maininput");
         bindFeedEvent();
         
         feed.children("li").unbind("mousedown").mousedown( function() {
@@ -326,6 +351,8 @@
           feed.hide();
           complete.hide();
         });
+
+	element.change(function(){console.log('hook element changing');});
         
         maininput.unbind("keydown");
         maininput.keydown( function(event) {
@@ -334,13 +361,15 @@
             holder.children("li.bit-box.deleted").removeClass("deleted");
           }
 
-          if ((event.keyCode == _key.enter || event.keyCode == _key.tab) && checkFocusOn()) {
+          if ((event.keyCode == _key.enter || event.keyCode == _key.tab) &&
+	      checkFocusOn()) {
             var option = focuson;
             addItem(option.text(), option.attr("rel"), 0, 0, 1);
             return _preventDefault(event);
           }
 
-          if ((event.keyCode == _key.enter || event.keyCode == _key.tab) && !checkFocusOn()) {
+          if ((event.keyCode == _key.enter || event.keyCode == _key.tab) &&
+	      !checkFocusOn()) {
             if (options.newel) {
               var value = xssPrevent($(this).val());
               addItem(value, value, 0, 0, 1);
@@ -367,14 +396,26 @@
         removeFeedEvent();
         if (focuson == null || focuson.length == 0) {
           focuson = feed.children("li:visible:" + position);
-          feed.get(0).scrollTop = position == 'first' ? 0 : parseInt(focuson.get(0).scrollHeight, 10) * (parseInt(feed.children("li:visible").length, 10) - Math.round(options.height / 2));
+          feed.get(0).scrollTop =
+	    position == 'first' ?
+	    0 :
+	    parseInt(focuson.get(0).scrollHeight, 10) *
+	    (parseInt(feed.children("li:visible").length, 10) -
+	     Math.round(options.height / 2));
         } else {
           focuson.removeClass("auto-focus");
-          focuson = position == 'first' ? focuson.nextAll("li:visible:first") : focuson.prevAll("li:visible:first");
+          focuson =
+	    position == 'first' ?
+	    focuson.nextAll("li:visible:first") :
+	    focuson.prevAll("li:visible:first");
           var prev = parseInt(focuson.prevAll("li:visible").length, 10);
           var next = parseInt(focuson.nextAll("li:visible").length, 10);
-          if (((position == 'first' ? prev : next) > Math.round(options.height / 2) || (position == 'first' ? prev : next) <= Math.round(options.height / 2)) && typeof(focuson.get(0)) != "undefined") {
-            feed.get(0).scrollTop = parseInt(focuson.get(0).scrollHeight, 10) * (prev - Math.round(options.height / 2));
+          if (((position == 'first' ? prev : next) > Math.round(options.height / 2) ||
+	       (position == 'first' ? prev : next) <= Math.round(options.height / 2)) &&
+	      typeof(focuson.get(0)) != "undefined") {
+            feed.get(0).scrollTop =
+	      parseInt(focuson.get(0).scrollHeight, 10) *
+	      (prev - Math.round(options.height / 2));
           }
         }
         feed.children("li").removeClass("auto-focus");
@@ -389,7 +430,8 @@
       }
 
       function maxItems() {
-          return options.maxitems != 0 && (holder.children("li.bit-box").length < options.maxitems);
+          return options.maxitems != 0 &&
+	  (holder.children("li.bit-box").length < options.maxitems);
       }
 
       function addTextItem(value) {
@@ -398,7 +440,8 @@
           if (value.length == 0) {
             return;
           }
-          var li = $('<li rel="'+value+'" fckb="1"">').html(xssDisplay(value));
+          var li = $('<li rel="'+value+'" fckb="1"">').
+	    html(xssDisplay(value));
           feed.prepend(li);
           counter++;
         }
@@ -409,7 +452,8 @@
         var _object = {};
         for (i = 0; i < item.get(0).attributes.length; i++) {
           if (item.get(0).attributes[i].nodeValue != null) {
-            _object["_" + item.get(0).attributes[i].nodeName] = item.get(0).attributes[i].nodeValue;
+            _object["_" + item.get(0).attributes[i].nodeName] =
+	      item.get(0).attributes[i].nodeValue;
           }
         }
         return func.call(func, _object);
@@ -461,7 +505,8 @@
         onremove: null,
         attachto: null,
         delay: 350,
-        bricket: true
+        bricket: true,
+	item_fadeout_speed: 0
       },
       opt);
 
