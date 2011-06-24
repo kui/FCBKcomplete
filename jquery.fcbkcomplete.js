@@ -19,10 +19,17 @@
  * onremove         - fire event on item remove
  * maxitimes        - maximum items that can be added
  * delay            - delay between ajax request (bigger delay, lower server time request)
- * addontab         - add first visible element on tab or enter hit
+ * // addontab         - add first visible element on tab or enter hit (not working)
  * attachto         - after this element fcbkcomplete insert own elements
  * bricket          - use square bricket with select (needed for asp or php) enabled by default
- * item_fadeout_speed - fade out time [msec] of items
+
+ * item_fadeout_speed	- fade out time [msec] of items
+ * new_item_message	- default "... new item"
+ * before_add_new_item	- fire event before new item select.
+ *			 this function is provided with new item value, 
+ *			 and add a returned object formated as { title:sometitle, value:somevalue }
+ *			 or a String object. (the String object will be treated as the "value" attr)
+ *			 if it return null or a empty string or false, no item will not be added.
  */
 
 (function( $, undefined ) {
@@ -44,9 +51,9 @@
         } else {
           element.after(holder);
         }
-        complete = $('<div class="facebook-auto">').
-	  append('<div class="default" style="display:none">' + options.complete_text + "</div>");
-	  //append('<div class="default" >' + options.complete_text + "</div>");
+        complete = $('<div class="facebook-auto">');
+	  //.append('<div class="default" style="display:none">' +
+	  //       options.complete_text + "</div>");
         complete.hover(function() {complete_hover = 0;},
 		       function() {complete_hover = 1;});
         feed = $('<ul id="'+elemid+'_feed"></ul>');
@@ -189,7 +196,6 @@
             feed.show();
           } else {
             feed.hide();
-            //complete.children(".default").show();
           }
         });
         
@@ -254,16 +260,18 @@
               addMembers(etext);
               bindEvents();
             }
-            complete.children(".default").hide();
             feed.show();
           }
         });
         if (focusme) {
           setTimeout( function() {
             input.focus();
-            //complete.children(".default").show();
           }, 1);
         }
+      }
+
+      function replaceDefaultItems(){
+	addMembers(etext, options.default_items);
       }
 
       function addMembers(etext, data) {
@@ -271,7 +279,6 @@
         if (!options.cache && data != null) {
           cache.clear();
         }
-        addTextItem(etext);
         if (data != null && data.length) {
           $.each(data, function(i, val) {
             cache.set(xssPrevent(val.key), xssPrevent(val.value));
@@ -281,17 +288,27 @@
 	  options.maxshownitems < cache.length() ?
 	  options.maxshownitems : cache.length();
         var content = '';
+	var haveExactlyMatch = false;
         $.each(cache.search(etext), function (i, object) {
           if (options.filter_selected &&
 	      element.children("option[value=" + object.key + "]").hasClass("selected")) {
             //nothing here...
           } else {
+	    console.log(object.key);
+	    console.log(object.value);
+	    console.log(etext);
+	    if(object.value == etext){
+	      haveExactlyMatch = true;
+	    }
             content += '<li rel="' + object.key + '">' +
 	      xssDisplay(itemIllumination(object.value, etext)) + '</li>';
             counter++;
             maximum--;
           }
-        });        
+        });
+	if(!haveExactlyMatch){
+          addNewCompleteItem(etext);
+	}
         feed.append(content);
         if (options.firstselected) {
           focuson = feed.children("li:visible:first");
@@ -342,19 +359,40 @@
         });
       }
 
+      function addNewItem(text){
+	console.log('add new item');
+	if(options.before_add_new_item){
+	  var _o = options.before_add_new_item(text);
+	  if(!_o){
+	  }else if((typeof _o == 'string') || (_o instanceof String)){
+	    addItem(text, _o, 0, 0, 1);
+	  }else if((_o.title || _o.key) && _o.value){
+	    addItem(_o.title || _o.key, _o.value, 0, 0, 1);
+	  }else{
+	    addItem(text, text, 0, 0, 1);
+	  }
+	}else{
+	  addItem(text, text, 0, 0, 1);
+	}
+      }
+
       function bindEvents() {
         var maininput = $("#" + elemid + "_annoninput").
 	  children(".maininput");
         bindFeedEvent();
-        
+	
         feed.children("li").unbind("mousedown").mousedown( function() {
           var option = $(this);
-          addItem(option.text(), option.attr("rel"), 0, 0, 1);
+	  if(option.attr('newitem')){
+	    addNewItem(option.attr('rel'));
+	  }else{
+            addItem(option.text(), option.attr("rel"), 0, 0, 1);
+	  }
           feed.hide();
           complete.hide();
         });
 
-	element.change(function(){console.log('hook element changing');});
+	//element.change(function(){console.log('hook element changing');});
         
         maininput.unbind("keydown");
         maininput.keydown( function(event) {
@@ -366,7 +404,11 @@
           if ((event.keyCode == _key.enter || event.keyCode == _key.tab) &&
 	      checkFocusOn()) {
             var option = focuson;
-            addItem(option.text(), option.attr("rel"), 0, 0, 1);
+	    if(option.attr('newitem')){
+	      addNewItem(option.attr('rel'));
+	    }else{
+              addItem(option.text(), option.attr("rel"), 0, 0, 1);
+	    }
             return _preventDefault(event);
           }
 
@@ -374,6 +416,7 @@
 	      !checkFocusOn()) {
             if (options.newel) {
               var value = xssPrevent($(this).val());
+	      // new item
               addItem(value, value, 0, 0, 1);
               return _preventDefault(event);
             }
@@ -410,6 +453,8 @@
 	    position == 'first' ?
 	    focuson.nextAll("li:visible:first") :
 	    focuson.prevAll("li:visible:first");
+
+	  // scroll? following focusing
           var prev = parseInt(focuson.prevAll("li:visible").length, 10);
           var next = parseInt(focuson.nextAll("li:visible").length, 10);
           if (((position == 'first' ? prev : next) > Math.round(options.height / 2) ||
@@ -436,14 +481,15 @@
 	  (holder.children("li.bit-box").length < options.maxitems);
       }
 
-      function addTextItem(value) {
+      function addNewCompleteItem(value) {
         if (options.newel && maxItems()) {
-          feed.children("li[fckb=1]").remove();
+          feed.children("li[newitem=1]").remove();
           if (value.length == 0) {
             return;
           }
-          var li = $('<li rel="'+value+'" fckb="1"">').
-	    html(xssDisplay(value));
+          var li = $('<li rel="'+value+'" newitem="1">').
+	    html('<span class="value">'+xssDisplay(value)+"</strong>").
+	    append('<span class="message"> '+options.new_item_message+'</span>');
           feed.prepend(li);
           counter++;
         }
@@ -508,7 +554,9 @@
         attachto: null,
         delay: 350,
         bricket: true,
-	item_fadeout_speed: 0
+	item_fadeout_speed: 0,
+	new_item_message: " new item",
+	before_add_new_item: null
       },
       opt);
 

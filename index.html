@@ -26,14 +26,20 @@
             $("#select3").fcbkcomplete({
               json_url: "data.txt",
 	      filter_case: true,
-              addontab: true,
-              maxitems: 2,
-              height: 2,
-              cache: true,
+              addontab: false,
+	      firstselected: true,
+              maxitems: 4,
+	      newel: true,
+              height: 10,
+              cache: false,
 	      default_items: [{key:"ijkl",value:"ijkl"},
 			      {key:"efgh",value:"efgh"},
 			      {key:"abcd",value:"abcd"}],
-	      item_fadeout_speed: 1
+	      item_fadeout_speed: 1,
+	      before_add_new_item: function(text){ // return the value attr
+		return text+'-value';
+	      },
+	      new_item_message: '新しいタグ'
             });
           });
         </script>
