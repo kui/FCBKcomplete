@@ -23,13 +23,16 @@
  * attachto         - after this element fcbkcomplete insert own elements
  * bricket          - use square bricket with select (needed for asp or php) enabled by default
 
+ ** add by kui
  * item_fadeout_speed	- fade out time [msec] of items
  * new_item_message	- default "... new item"
- * before_add_new_item	- fire event before new item select.
- *			 this function is provided with new item value, 
- *			 and add a returned object formated as { title:sometitle, value:somevalue }
- *			 or a String object. (the String object will be treated as the "value" attr)
- *			 if it return null or a empty string or false, no item will not be added.
+ * before_add_new_item	- fire event before new item select. this function
+ *			 is provided with new item value, and add a returned
+ *			 object formated as { title:sometitle, value:somevalue }
+ *			 or a String object. (the String object will be treated
+ *			 as the "value" attr).
+ *			 if it return null or a empty string or false, no item
+ *			 will not be added.
  */
 
 (function( $, undefined ) {
