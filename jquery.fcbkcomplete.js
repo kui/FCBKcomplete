@@ -115,16 +115,15 @@
       }
       
       function addItem(title, value, preadded, locked, focusme) {
-        if (!maxItems()) {
+        if (!maxItems() || isAlreadyHolded(title, 1)) {
           return false;
         }
         var liclass = "bit-box" + (locked ? " locked": "");
         var id = randomId();
-        var txt = document.createTextNode(xssDisplay(title));
         var aclose = $('<a class="closebutton" href="#"></a>');
-        var li =
-	  $('<li class="'+liclass+'" rel="'+value+'" id="pt_'+id+'"></li>').
-	  prepend(txt).append(aclose);
+        var li = $('<li class="'+liclass+'" rel="'+value+'" id="pt_'+id+'"></li>')
+	li.text(xssDisplay(title));
+        li.append(aclose);
 
         holder.append(li);
 
@@ -137,8 +136,8 @@
           addInput(focusme);
           var _item =
 	    $('<option value="'+xssDisplay(value, 1)+'" id="opt_'+id+
-	      '" class="selected" selected="selected">'+xssDisplay(title)+
-	      '</option>');
+	      '" class="selected" selected="selected"></option>');
+          _item.text(xssDisplay(title));
           element.append(_item);
           if (options.onselect) {
             funCall(options.onselect, _item);
@@ -292,26 +291,33 @@
 	  options.maxshownitems : cache.length();
         var content = '';
 	var haveExactlyMatch = false;
+
+        if(isAlreadyHolded(etext)){
+          haveExactlyMatch = true;
+        }
+        // console.log(etext);
         $.each(cache.search(etext), function (i, object) {
           if (options.filter_selected &&
 	      element.children("option[value=" + object.key + "]").hasClass("selected")) {
             //nothing here...
-          } else {
-	    console.log(object.key);
-	    console.log(object.value);
-	    console.log(etext);
-	    if(object.value == etext){
-	      haveExactlyMatch = true;
-	    }
+            
+          //}else if(options.filter_selected &&
+            //       ){
+          }else {
             content += '<li rel="' + object.key + '">' +
 	      xssDisplay(itemIllumination(object.value, etext)) + '</li>';
             counter++;
             maximum--;
+            if( (!haveExactlyMatch) && object.value == etext ){
+              haveExactlyMatch = true;
+            }
           }
         });
+        
 	if(!haveExactlyMatch){
           addNewCompleteItem(etext);
 	}
+
         feed.append(content);
         if (options.firstselected) {
           focuson = feed.children("li:visible:first");
@@ -331,6 +337,19 @@
           complete.show();
         }
       }
+
+      function isAlreadyHolded(etext, flag){
+        var t = flag==1 ? etext : xssDisplay(etext);
+        var flag = false;
+        holder.children().each(function(i,obj){
+          if((!flag) && $(obj).text() == t){
+            flag = true;
+          }
+          console.log($(obj).text(), t);
+        });
+        return flag;
+      }
+
 
       function itemIllumination(text, etext) {
         try {
@@ -491,7 +510,7 @@
             return;
           }
           var li = $('<li rel="'+value+'" newitem="1">').
-	    html('<span class="value">'+xssDisplay(value)+"</strong>").
+	    append($('<span class="value"></strong>').text(xssDisplay(value))).
 	    append('<span class="message"> '+options.new_item_message+'</span>');
           feed.prepend(li);
           counter++;
@@ -519,17 +538,9 @@
       
       function xssPrevent(string, flag) {
         if (typeof flag != "undefined") {
-          for(i = 0; i < string.length; i++) {
-            var charcode = string.charCodeAt(i);
-            if ((_key.exclamation <= charcode && charcode <= _key.slash) || 
-                (_key.colon <= charcode && charcode <= _key.at) || 
-                (_key.squarebricket_left <= charcode && charcode <= _key.apostrof)) {
-              string = string.replace(string[i], escape(string[i]));
-            }
-          }
-          string = string.replace(/(\{|\}|\*)/i, "\\$1");
+          string = escape(string);
         }
-        return string.replace(/script(.*)/g, "");
+        return string;
       }
       
       function xssDisplay(string, flag) {
