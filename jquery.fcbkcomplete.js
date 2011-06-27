@@ -118,12 +118,18 @@
         if (!maxItems() || isAlreadyHolded(title, 1)) {
           return false;
         }
-        var liclass = "bit-box" + (locked ? " locked": "");
+        // var liclass = "bit-box" + (locked ? " locked": "");
         var id = randomId();
         var aclose = $('<a class="closebutton" href="#"></a>');
-        var li = $('<li class="'+liclass+'" rel="'+value+'" id="pt_'+id+'"></li>')
-	li.text(xssDisplay(title));
-        li.append(aclose);
+        //var li = $('<li class="'+liclass+'" rel="'+value+'" id="pt_'+id+'"></li>')
+	//li.text(xssDisplay(title));
+        li = $('<li>').addClass('bit-box').attr('rel',value)
+          .attr('id', id).text(title).append(aclose);
+        if(locked){
+          li.addClass('locked');
+        }
+        //li.text(title);
+        //li.append(aclose);
 
         holder.append(li);
 
@@ -135,9 +141,10 @@
           $("#" + elemid + "_annoninput").remove();
           addInput(focusme);
           var _item =
-	    $('<option value="'+xssDisplay(value, 1)+'" id="opt_'+id+
+	    $('<option value="'+value+'" id="opt_'+id+
 	      '" class="selected" selected="selected"></option>');
-          _item.text(xssDisplay(title));
+          //_item.text(xssDisplay(title));
+          _item.text(title);
           element.append(_item);
           if (options.onselect) {
             funCall(options.onselect, _item);
@@ -151,13 +158,13 @@
 
       function removeItem(item) {
         if (!item.hasClass('locked')) {
-	  console.log(item);
+	  //console.log(item);
 	  var _item = item;
           _item.fadeOut(options.item_fadeout_speed, function(){
             var id = _item.attr('id');
 	    var removeTarget =
 	      id ?
-	      $("#o" + id + "") : 
+	      $("#opt_" + id + "") : 
 	      element.children("option[value=" + _item.attr("rel") + "]");
             if (options.onremove) {
               funCall(options.onremove, removeTarget);
@@ -211,9 +218,9 @@
         });
 
         input.keyup( function(event) {
-          var etext = xssPrevent(input.val(), 1);
+          var text = input.val();
           
-          if (event.keyCode == _key.backspace && etext.length == 0) {
+          if (event.keyCode == _key.backspace && text.length == 0) {
             feed.hide();
 	    //replaceDefaultItems();
 
@@ -238,11 +245,11 @@
 	      event.keyCode != _key.uparrow &&
 	      event.keyCode != _key.leftarrow &&
 	      event.keyCode != _key.rightarrow &&
-	      etext.length != 0) {
+	      text.length != 0) {
             counter = 0;
             if (options.json_url && maxItems()) {
-              if (options.cache && json_cache_object.get(etext)) {
-                addMembers(etext);
+              if (options.cache && json_cache_object.get(text)) {
+                addMembers(text);
                 bindEvents();
               } else {
                 getBoxTimeout++;
@@ -250,16 +257,17 @@
                 setTimeout( function() {
                   if (getBoxTimeoutValue != getBoxTimeout) return;
                   $.getJSON(options.json_url,
-			    {"tag": xssDisplay(etext)},
+			    {"tag": text},
 			    function(data) {
-			      addMembers(etext, data);
-			      json_cache_object.set(etext, 1);
+			      addMembers(text, data);
+                              //console.log(data.value);
+			      json_cache_object.set(text, 1);
 			      bindEvents();
 			    });
                 }, options.delay);
               }
             } else {
-              addMembers(etext);
+              addMembers(text);
               bindEvents();
             }
             feed.show();
@@ -276,46 +284,46 @@
 	addMembers(etext, options.default_items);
       }
 
-      function addMembers(etext, data) {
+      function addMembers(text, data) {
         feed.html('');
         if (!options.cache && data != null) {
           cache.clear();
         }
         if (data != null && data.length) {
           $.each(data, function(i, val) {
-            cache.set(xssPrevent(val.key), xssPrevent(val.value));
+            cache.set(val.key, val.value);
           });
-        }        
+        }
         var maximum =
 	  options.maxshownitems < cache.length() ?
 	  options.maxshownitems : cache.length();
-        var content = '';
-	var haveExactlyMatch = false;
+	var haveExactlyMatch = isAlreadyHolded(text);
+        var content = $();
 
-        if(isAlreadyHolded(etext)){
-          haveExactlyMatch = true;
-        }
         // console.log(etext);
-        $.each(cache.search(etext), function (i, object) {
+        $.each(cache.search(text), function (i, object) {
+          console.log(object);
           if (options.filter_selected &&
 	      element.children("option[value=" + object.key + "]").hasClass("selected")) {
             //nothing here...
             
-          //}else if(options.filter_selected &&
-            //       ){
           }else {
-            content += '<li rel="' + object.key + '">' +
-	      xssDisplay(itemIllumination(object.value, etext)) + '</li>';
+            var _li = $('<li />').attr('rel',object.key).text(object.value);
+            hilight(text, _li);
+            content = content.add(_li);
+            //console.log(content,_li);
+
             counter++;
             maximum--;
-            if( (!haveExactlyMatch) && object.value == etext ){
+
+            if( (!haveExactlyMatch) && object.value == text ){
               haveExactlyMatch = true;
             }
           }
         });
         
 	if(!haveExactlyMatch){
-          addNewCompleteItem(etext);
+          addNewCompleteItem(text);
 	}
 
         feed.append(content);
@@ -338,18 +346,27 @@
         }
       }
 
-      function isAlreadyHolded(etext, flag){
-        var t = flag==1 ? etext : xssDisplay(etext);
+      function isAlreadyHolded(text){
         var flag = false;
-        holder.children().each(function(i,obj){
-          if((!flag) && $(obj).text() == t){
+        holder.children().each(function(i,o){
+          if((!flag) && $(o).text() == text){
             flag = true;
           }
-          console.log($(obj).text(), t);
+          //console.log($(o).text(), text);
         });
         return flag;
       }
 
+      function hilight(text, elem){
+        try{
+          escapeRegexText = 
+            text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+          var regex =
+            new RegExp('('+escapeRegexText+')', options.filter_case?null:'i');
+          elem.html(elem.html().replace(regex,'<em>$1</em>'))
+        }catch(e){}
+        return elem;
+      }
 
       function itemIllumination(text, etext) {
         try {
@@ -437,7 +454,7 @@
           if ((event.keyCode == _key.enter || event.keyCode == _key.tab) &&
 	      !checkFocusOn()) {
             if (options.newel) {
-              var value = xssPrevent($(this).val());
+              var value = $(this).val();
 	      // new item
               addItem(value, value, 0, 0, 1);
               return _preventDefault(event);
@@ -503,15 +520,15 @@
 	  (holder.children("li.bit-box").length < options.maxitems);
       }
 
-      function addNewCompleteItem(value) {
+      function addNewCompleteItem(text) {
         if (options.newel && maxItems()) {
           feed.children("li[newitem=1]").remove();
-          if (value.length == 0) {
+          if (text.length == 0) {
             return;
           }
-          var li = $('<li rel="'+value+'" newitem="1">').
-	    append($('<span class="value"></strong>').text(xssDisplay(value))).
-	    append('<span class="message"> '+options.new_item_message+'</span>');
+          var li = $('<li newitem="1"></li>').attr('rel',text).
+	    append($('<span class="value"></span>').text(text)).
+	    append($('<span class="message"></span>').text(options.new_item_message));
           feed.prepend(li);
           counter++;
         }
@@ -536,6 +553,18 @@
         return true;
       }
       
+      function enc(s){
+        return encodeURI(s);
+      }
+
+      var _dummy = $('<div>');
+      function escapeHTML(str){
+        return _dummy.text(str).html();
+      }
+      function unescapeHTML(str){
+        return _dummy.html(str).text();
+      }
+      /*
       function xssPrevent(string, flag) {
         if (typeof flag != "undefined") {
           string = escape(string);
@@ -549,7 +578,7 @@
           return string;
         }
         return unescape(string);
-      }
+      }*/
 
       var options = $.extend({
         json_url: null,
