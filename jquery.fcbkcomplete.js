@@ -83,9 +83,12 @@
           if (option.hasClass("selected")) {
             var id = addItem(option.text(), option.val(), true, 
 			     option.hasClass("locked"));
-            temp_elem.append('<option value="'+option.val()+
-			     '" selected="selected" id="opt_'+id+
-			     '"class="selected">'+option.text()+'</option>');
+            var opt = $('<option>').val(opiton.val()).attr('id', 'opt_'+id)
+              .attr('selected', 'selected').addClass('selected').text(option.text());
+
+            //temp_elem.append('<option value="'+option.val()+
+	    //		     '" selected="selected" id="opt_'+id+
+	    //		     '"class="selected">'+option.text()+'</option>');
           }
         });
         
