@@ -302,7 +302,7 @@
 
         // console.log(etext);
         $.each(cache.search(text), function (i, object) {
-          console.log(object);
+          // console.log(object);
           if (options.filter_selected &&
 	      element.children("option[value=" + object.key + "]").hasClass("selected")) {
             //nothing here...
