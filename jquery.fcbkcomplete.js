@@ -364,7 +364,7 @@
         try{
           var regex =
             new RegExp('('+escapeRegex(text)+')', options.filter_case?null:'i');
-          elem.text(elem.text().replace(regex,'<em>$1</em>'))
+          elem.html(elem.html().replace(regex,'<em>$1</em>'))
         }catch(e){}
         return elem;
       }
@@ -558,10 +558,6 @@
         return true;
       }
       
-      function enc(s){
-        return encodeURI(s);
-      }
-
       var _dummy = $('<div>');
       function escapeHTML(str){
         return _dummy.text(str).html();
