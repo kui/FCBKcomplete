@@ -19,7 +19,7 @@
  * onremove         - fire event on item remove
  * maxitimes        - maximum items that can be added
  * delay            - delay between ajax request (bigger delay, lower server time request)
- * // addontab         - add first visible element on tab or enter hit (not working)
+ * addontab         - add first visible element on tab or enter hit (not working)
  * attachto         - after this element fcbkcomplete insert own elements
  * bricket          - use square bricket with select (needed for asp or php) enabled by default
 
@@ -140,6 +140,7 @@
           removeItem($(this).parent("li"));
           return false;
         });
+
         if (!preadded) {
           $("#" + elemid + "_annoninput").remove();
           addInput(focusme);
@@ -184,6 +185,7 @@
         var li = $('<li class="bit-input" id="'+elemid + '_annoninput">');
         var input = $('<input type="text" class="maininput" size="1"'+
 		      ' autocomplete="off">');
+        input.css('width', defaultInputPadding);
         var getBoxTimeout = 0;
 
         holder.append(li.append(input));
@@ -192,6 +194,7 @@
           if (maxItems()) {
             complete.fadeIn("fast");
           }
+          runInputWidthObserver();
         });
         
         input.blur( function() {
@@ -200,6 +203,7 @@
           } else {
             input.focus();
           }
+          stopInputWidthObserver();
         });
         
         holder.click( function() {
@@ -211,13 +215,7 @@
           }
         });
         
-        input.keypress( function(event) {
-          if (event.keyCode == _key.enter) {
-            return false;
-          }
-          //auto expand input
-	  // TODO support multibyte chars
-          input.attr("size", input.val().length + 1);
+        input.keydown( function(event) {
         });
 
         input.keyup( function(event) {
@@ -248,6 +246,7 @@
 	      event.keyCode != _key.uparrow &&
 	      event.keyCode != _key.leftarrow &&
 	      event.keyCode != _key.rightarrow &&
+	      event.keyCode != _key.tab &&
 	      text.length != 0) {
             counter = 0;
             if (options.json_url && maxItems()) {
@@ -445,7 +444,8 @@
             holder.children("li.bit-box.deleted").removeClass("deleted");
           }
 
-          if ((event.keyCode == _key.enter || event.keyCode == _key.tab) &&
+          if ((event.keyCode == _key.enter || 
+               (options.addontab && event.keyCode == _key.tab)) &&
 	      checkFocusOn()) {
             var option = focuson;
 	    if(option.attr('newitem')){
@@ -454,28 +454,23 @@
               addItem(option.text(), option.attr("rel"), 0, 0, 1);
 	    }
             return _preventDefault(event);
-          }
-
-          if ((event.keyCode == _key.enter || event.keyCode == _key.tab) &&
+          }else if ((event.keyCode == _key.enter || 
+                     (options.addontab && event.keyCode == _key.tab)) &&
 	      !checkFocusOn()) {
             if (options.newel) {
               var value = $(this).val();
-	      // new item
-              addItem(value, value, 0, 0, 1);
+              addNewItem(value);
               return _preventDefault(event);
-            }
-            if (options.addontab && options.newel) {
+            }else if (options.addontab && options.newel) {
               focuson = feed.children("li:visible:first");
-              var option = focuson;
-              addItem(option.text(), option.attr("rel"), 0, 0, 1);
+              addNewItem(option.attr("rel"));
               return _preventDefault(event);
             }
-          }
-
-          if (event.keyCode == _key.downarrow) {
+          }else if (event.keyCode == _key.downarrow ||
+              (!options.addontab && event.keyCode == _key.tab)) {
             nextItem('first');
-          }          
-          if (event.keyCode == _key.uparrow) {
+            return false;
+          }else if (event.keyCode == _key.uparrow) {
             nextItem('last');
           }
         });
@@ -545,7 +540,7 @@
         for (i = 0; i < item.get(0).attributes.length; i++) {
           if (item.get(0).attributes[i].nodeValue != null) {
             _object["_" + item.get(0).attributes[i].nodeName] =
-	      item.get(0).attributes[i].nodeValue;
+	      item.get(0).attriutes[i].nodeValue;
           }
         }
         return func.call(func, _object);
@@ -564,6 +559,27 @@
       }
       function unescapeHTML(str){
         return _dummy.html(str).text();
+      }
+
+      function runInputWidthObserver(){
+
+        if(inputWidthObserverId){
+          stopInputWidthObserver();
+        }
+        var i = $('.maininput');
+        var width = i.get(0).scrollWidth;
+        inputWidthObserverId = setInterval(function(){
+          var _w = i.get(0).scrollWidth;
+          if(_w != width+defaultInputPadding){
+            i.css('width', _w+defaultInputPadding);
+            width = _w;
+            console.log('foo');
+          }
+        },200);
+      }
+      function stopInputWidthObserver(){
+        clearInterval(inputWidthObserverId);
+        inputWidthObserverId = null;
       }
       /*
       function xssPrevent(string, flag) {
@@ -684,6 +700,9 @@
           return count;
         }
       };
+
+      var defaultInputPadding = 30;
+      var inputWidthObserverId = null;
       
       init();
       return this;
