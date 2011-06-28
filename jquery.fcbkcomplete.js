@@ -362,16 +362,18 @@
 
       function hilight(text, elem){
         try{
-          escapeRegexText = 
-            text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
           var regex =
-            new RegExp('('+escapeRegexText+')', options.filter_case?null:'i');
-          elem.html(elem.html().replace(regex,'<em>$1</em>'))
+            new RegExp('('+escapeRegex(text)+')', options.filter_case?null:'i');
+          elem.text(elem.text().replace(regex,'<em>$1</em>'))
         }catch(e){}
         return elem;
       }
 
-      function itemIllumination(text, etext) {
+      function escapeRegex(text){
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      }
+      
+      /*function itemIllumination(text, etext) {
         try {
           var regex = 
 	    new RegExp("(.*)(" + etext + ")(.*)",
@@ -379,7 +381,7 @@
           var text = text.replace(regex,'$1<em>$2</em>$3');
         } catch(ex) {};
         return text;
-      }
+      }*/
 
       function bindFeedEvent() {
         feed.children("li").mouseover( function() {
@@ -657,7 +659,7 @@
       var cache = {
         'search': function (text, callback) {
           var temp = new Array();
-          var regex = new RegExp(text, (options.filter_case ? "g": "gi"));
+          var regex = new RegExp(escapeRegex(text), (options.filter_case ? null: 'i'));
           $.each(element.data(), function (i, _elem) {
             if (typeof _elem.search === 'function') {
               if (_elem.search(regex) != -1) {
